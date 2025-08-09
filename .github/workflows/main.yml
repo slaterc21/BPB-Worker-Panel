@@ -1,0 +1,28 @@
+name: Sync with upstream
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # 每6小时执行一次
+  workflow_dispatch: # 允许手动触发
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Git
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+      - name: Add upstream remote
+        run: |
+          git remote add upstream ${{ github.event.repository.clone_url }}
+          git fetch upstream
+      - name: Sync with upstream
+        run: |
+          git checkout main # 或者你使用的分支
+          git merge upstream/main # 或者你使用的分支
+      - name: Push changes
+        if: ${{ github.event.repository.fork == true && steps.sync.outputs.changed == 'true' }} # 只有在fork仓库且有改动时才推送
+        run: |
+          git push origin main # 或者你使用的分支
